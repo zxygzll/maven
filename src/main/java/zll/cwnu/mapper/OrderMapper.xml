@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="zll.cwnu.mapper.OrderMapper"> 
+	<resultMap type="Order" id="OrdersUserResultMap">
+<!-- 		配置订单的信息 -->
+		<id column="oid" property="oid"/>
+		<result column="ordertime" property="ordertime"/>
+		<result column="total" property="total"/>
+		<result column="status" property="status"/>
+		<result column="address" property="address"/>
+		
+<!-- 		配置关联用户的信息 -->
+		<association property="user" javaType="User">
+			<id column="uid" property="uid"/>
+			<result column="loginname" property="loginname"/>
+			<result column="loginpass" property="loginpass"/>		
+		</association>
+	</resultMap>
+	<resultMap type="Order" id="findOrderUserOrderItemResultMap" extends="OrdersUserResultMap">
+<!-- 		订单详细，用户信息通过继承而来 -->
+		<collection property="orderItem" ofType="OrderItem">
+			<id column="orderItemId" property="orderItemId"/>
+			<result column="bname" property="bname"/>
+		</collection>
+	</resultMap>
+	
+	<resultMap type="User" id="findUserItemResultMap">
+<!-- 		用户信息 -->
+		<id column="uid" property="uid"/>
+		<result column="loginname" property="loginname"/>
+		<result column="loginpass" property="loginpass"/>
+		
+<!-- 		一个用户有多个订单 -->
+		<collection property="order" ofType="Order">
+			<id column="oid" property="oid"/>
+			<result column="ordertime" property="ordertime"/>
+			<result column="total" property="total"/>
+			<result column="status" property="status"/>
+			<result column="address" property="address"/>
+			
+<!-- 			一个订单里面有多个商品信息 -->
+			<collection property="orderItem" ofType="OrderItem">
+				<id column="orderItemId" property="orderItemId"/>
+				<result column="bname" property="bname"/>
+			</collection>
+		</collection>
+	</resultMap>
+	
+<!-- 	根据订单延迟加载用户 -->
+	<resultMap type="Order" id="findOrderLazyLoaderUserResultMap">
+<!-- 		订单信息 -->
+			<id column="oid" property="oid"/>
+			<result column="ordertime" property="ordertime"/>
+			<result column="total" property="total"/>
+			<result column="status" property="status"/>
+			<result column="address" property="address"/>
+<!-- 			配置用户信息 -->
+			<association property="user" javaType="User" select="findUserById" column="uid"></association>
+	</resultMap>
+  <select id="findUserById" parameterType="String" resultType="User">
+  	SELECT * FROM t_user WHERE uid=#{value}
+  </select>
+  <select id="findOrderUser" resultType="OrderCustomer">   
+		    SELECT
+			o.*, u.loginname,
+			u.loginpass
+		FROM
+			t_order o,
+			t_user u
+		WHERE
+			o.uid = u.uid;  
+    </select>
+    <select id="findOrderUserMap" resultMap="OrdersUserResultMap">   
+		    SELECT
+			o.*, u.loginname,
+			u.loginpass
+		FROM
+			t_order o,
+			t_user u
+		WHERE
+			o.uid = u.uid;  
+    </select>
+<!--     一对多的查询 -->
+	<select id="findOrderUserOrderItemMap" resultMap="findOrderUserOrderItemResultMap">
+		SELECT
+			o.*, u.loginname,
+			u.loginpass,
+			it.orderItemId,
+			it.bname
+		FROM
+			t_order o,
+			t_user u,
+			t_orderitem it
+		WHERE
+			o.uid = u.uid
+		AND it.oid = o.oid;
+		
+	</select>
+	
+<!-- 	根据用户查商品的信息 -->
+	<select id="findUserItem" resultMap="findUserItemResultMap">
+		SELECT
+			o.*, u.loginname,
+			u.loginpass,
+			it.orderItemId,
+			it.bname
+		FROM
+			t_order o,
+			t_user u,
+			t_orderitem it
+		WHERE
+			o.uid = u.uid
+		AND it.oid = o.oid;
+	</select>
+	
+	<select id="findOrderLazyLoaderUser" resultMap="findOrderLazyLoaderUserResultMap">
+		SELECT * FROM t_order
+	</select>
+</mapper>
